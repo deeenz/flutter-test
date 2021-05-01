@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test_app/views/add_movie.dart';
 import 'package:flutter_test_app/views/all_movies.dart';
+import 'package:flutter_test_app/views/history.dart';
 import 'package:flutter_test_app/views/my_movies.dart';
 
 class HomePage extends StatefulWidget {
@@ -35,7 +36,7 @@ class _HomePageState extends State<HomePage> {
       icon: Icon(Icons.movie_creation_outlined, size: 30),
     ),
     BottomNavigationBarItem(
-      label: 'Home',
+      label: 'History',
       icon: Icon(Icons.widgets),
     ),
   ];
@@ -47,7 +48,7 @@ class _HomePageState extends State<HomePage> {
 
   List<Widget> adminNavWidgets = [
     AddMovie(),
-    AllMovies(),
+    HistoryPage(),
   ];
 
   @override
