@@ -19,7 +19,7 @@ class AuthRepository {
         user = auth.currentUser;
       }
     } catch (e) {
-      print(e);
+      print(e.message);
       user = null;
     }
 
