@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_test_app/helper/constants.dart';
 import 'package:flutter_test_app/models/movie_model.dart';
 
@@ -14,53 +17,76 @@ class MovieRepository {
 
   FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
 
-  Future getMovies() async {
-    //return a stream of list<Movie> for UI consumption
-    List<Movie> movies = [];
-    QuerySnapshot movieSnapshot =
-        await firebaseFirestore.collection(MOVIECOLLECTION).limit(100).get();
+  Stream<List<Movie>> getMoviesStream() {
+    Stream<QuerySnapshot> movieSnapshot =
+        firebaseFirestore.collection(MOVIECOLLECTION).limit(100).snapshots();
 
-    for (var movie in movieSnapshot.docs) {
-      movies.add(
-        Movie.fromMap(
-          movie.data(),
-        ),
-      );
-    }
-
-    return movies;
+    return movieSnapshot.map((event) {
+      return event.docs.map((e) {
+        return Movie.fromMap(e.data());
+      }).toList();
+    });
   }
 
-  Future getMyMovies() async {
-    //return a stream of list<Movie> for UI consumption
-    List<Movie> movies = [];
+  Stream<List<Movie>> getMyMovies() {
     String email = FirebaseAuth.instance.currentUser.email;
-    QuerySnapshot movieSnapshot =
-        await firebaseFirestore.collection(email).limit(100).get();
+    Stream<QuerySnapshot> movieSnapshot =
+        firebaseFirestore.collection(email).limit(100).snapshots();
 
-    for (var movie in movieSnapshot.docs) {
-      movies.add(
-        Movie.fromMap(
-          movie.data(),
-        ),
-      );
-    }
-
-    return movies;
+    return movieSnapshot.map((event) {
+      return event.docs.map((e) {
+        return Movie.fromMap(e.data());
+      }).toList();
+    });
   }
 
   Future<String> purchaseMovie(Movie movie) async {
     String email = FirebaseAuth.instance.currentUser.email;
     try {
       await firebaseFirestore.collection(email).doc().set(movie.toMap());
+      await firebaseFirestore
+          .collection('history')
+          .doc()
+          .set({'history': "$email purchased ${movie.title}"});
       return 'success';
     } catch (e) {
       return null;
     }
   }
 
+  Stream<List<String>> getHistory() {
+    Stream<QuerySnapshot> movieSnapshot =
+        firebaseFirestore.collection('history').limit(100).snapshots();
+
+    return movieSnapshot.map((event) {
+      return event.docs.map((e) {
+        return e.data()['history'];
+      }).toList();
+    });
+  }
+
   Future<String> addMovie(Movie movie) async {
     try {
+      String imageUri = '';
+      String videoUri = '';
+      if (movie.imageUri != null) {
+        TaskSnapshot uploadTask = await FirebaseStorage.instance
+            .ref('movieImages')
+            .putFile(File(movie.imageUri));
+
+        imageUri = await uploadTask.ref.getDownloadURL();
+      }
+      if (movie.videoUri != null) {
+        TaskSnapshot uploadTask = await FirebaseStorage.instance
+            .ref('videoFiles')
+            .putFile(File(movie.videoUri));
+
+        videoUri = await uploadTask.ref.getDownloadURL();
+      }
+
+      movie.imageUri = imageUri;
+      movie.videoUri = videoUri;
+
       await firebaseFirestore.collection(MOVIECOLLECTION).doc().set(
             movie.toMap(),
           );

@@ -22,14 +22,13 @@ class MovieProvider extends ChangeNotifier {
     // }
   }
 
-  void fetchAllMovies() async {
-    movies = await movieRepository.getMovies();
-
-    notifyListeners();
+  Stream<List<Movie>> fetchAllMovies() {
+    return movieRepository.getMoviesStream();
   }
 
   Future<String> purchaseMovie(Movie movie) async {
     var res = await movieRepository.purchaseMovie(movie);
+    return res;
   }
 
   Future<String> addMovie(Movie movie) async {
@@ -56,7 +55,7 @@ class MovieProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void fetchMyMovies() async {
-    movies = await movieRepository.getMyMovies();
+  Stream<List<Movie>> fetchMyMovies() {
+   return movieRepository.getMyMovies();
   }
 }

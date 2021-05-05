@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test_app/models/movie_model.dart';
 import 'package:flutter_test_app/providers/movie_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
+
+import 'login_page.dart';
 
 class AddMovie extends StatefulWidget {
   AddMovie({Key key}) : super(key: key);
@@ -18,6 +21,9 @@ class _AddMovieState extends State<AddMovie> {
   TextEditingController starringController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   String selectedGenre;
+  String selectedImagePath;
+  String selectedVideoPath;
+  bool loading = false;
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -26,6 +32,41 @@ class _AddMovieState extends State<AddMovie> {
       appBar: AppBar(
         title: Text('Add New Movie'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.more_vert_outlined,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              showMenu(
+                  context: context,
+                  items: [
+                    PopupMenuItem(
+                      child: GestureDetector(
+                        child: ListTile(
+                          leading: Icon(
+                            Icons.logout,
+                            color: Colors.black,
+                          ),
+                          title: Text("Logout"),
+                        ),
+                        onTap: () {
+                          FirebaseAuth.instance.signOut().then((value) => {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (context) => LoginPage(),
+                                  ),
+                                )
+                              });
+                        },
+                      ),
+                    ),
+                  ],
+                  position: RelativeRect.fromLTRB(screenWidth * .7, 0, 0, 0));
+            },
+          )
+        ],
       ),
       body: Form(
         key: addMovieFormKey,
@@ -169,45 +210,121 @@ class _AddMovieState extends State<AddMovie> {
               ),
             ),
             Container(
-              margin: EdgeInsets.symmetric(vertical: 20),
-              child: ElevatedButton(
-                onPressed: () async {
-                  if (addMovieFormKey.currentState.validate()) {
-                    // call the the auth controller for authentication
-                    String email = FirebaseAuth.instance.currentUser.email;
-                    Movie movie = Movie(
-                        description: descriptionController.text,
-                        title: titleController.text,
-                        imageUri: '',
-                        videoUri: '',
-                        genre: selectedGenre,
-                        starring: starringController.text,
-                        id: '');
+                margin: EdgeInsets.symmetric(vertical: 10),
+                height: 60,
+                width: screenWidth * .7,
+                child: Row(
+                  children: [
+                    Container(
+                      width: screenWidth * .3,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          FilePickerResult result = await FilePicker.platform
+                              .pickFiles(type: FileType.image);
 
-                    Provider.of<MovieProvider>(context, listen: false)
-                        .addMovie(movie)
-                        .then(
-                          (value) => {
+                          if (result != null) {
+                            selectedImagePath = result.files.single.path;
+                          } else {
+                            // User canceled the picker
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text("Movie Added"),
+                                content: Text("Please select a cover picture"),
                               ),
-                            )
-                          },
-                        );
-                  }
-                },
-                child: Text(
-                  "Add Movie",
-                  style: TextStyle(fontSize: 20),
-                ),
-                style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(
-                        Theme.of(context).accentColor)),
-              ),
-              height: 60,
-              width: screenWidth * .7,
-            ),
+                            );
+                          }
+                        },
+                        child: Text("Cover Image"),
+                      ),
+                    ),
+                    SizedBox(
+                      width: screenWidth * .1,
+                    ),
+                    Container(
+                      width: screenWidth * .3,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          FilePickerResult result = await FilePicker.platform
+                              .pickFiles(type: FileType.video);
+
+                          if (result != null) {
+                            selectedVideoPath = result.files.single.path;
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Please select a video file"),
+                              ),
+                            );
+                          }
+                        },
+                        child: Text("Video File"),
+                      ),
+                    ),
+                  ],
+                )),
+            (loading)
+                ? Center(
+                    child: Container(
+                      child: CircularProgressIndicator(),
+                      height: 60,
+                      width: 60,
+                    ),
+                  )
+                : Container(
+                    margin: EdgeInsets.symmetric(vertical: 20),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (addMovieFormKey.currentState.validate()) {
+                          if (selectedGenre == null ||
+                              selectedImagePath == null ||
+                              selectedVideoPath == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    "Please ensure that you have selected the movie genre, uploaded the cover image and video file"),
+                              ),
+                            );
+                          } else {
+                            setState(() {
+                              loading = true;
+                            });
+                            //create a movie instance from the information proivided
+                            Movie movie = Movie(
+                                description: descriptionController.text,
+                                title: titleController.text,
+                                imageUri: selectedImagePath,
+                                videoUri: selectedVideoPath,
+                                genre: selectedGenre,
+                                starring: starringController.text,
+                                id: '');
+                            // call the movie provider to do the movie storing
+                            Provider.of<MovieProvider>(context, listen: false)
+                                .addMovie(movie)
+                                .then(
+                              (value) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("Movie Added"),
+                                  ),
+                                );
+                                setState(() {
+                                  loading = false;
+                                });
+                              },
+                            );
+                          }
+                        }
+                      },
+                      child: Text(
+                        "Add Movie",
+                        style: TextStyle(fontSize: 20),
+                      ),
+                      style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all(
+                              Theme.of(context).accentColor)),
+                    ),
+                    height: 60,
+                    width: screenWidth * .7,
+                  ),
           ],
         ),
       ),

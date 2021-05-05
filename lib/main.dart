@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test_app/providers/auth_provider.dart';
+import 'package:flutter_test_app/providers/historyProvider.dart';
 import 'package:flutter_test_app/providers/movie_provider.dart';
 import 'package:flutter_test_app/views/home_page.dart';
 import 'package:flutter_test_app/views/login_page.dart';
@@ -21,6 +22,11 @@ void main() async {
         ChangeNotifierProvider<MovieProvider>(
           create: (_) {
             return MovieProvider();
+          },
+        ),
+        ChangeNotifierProvider<HistoryProvider>(
+          create: (_) {
+            return HistoryProvider();
           },
         )
       ],

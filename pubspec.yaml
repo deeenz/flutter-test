@@ -38,6 +38,7 @@ dependencies:
   flutter_anywhere_menus: ^0.1.2
   dependencies:
   email_validator: '^1.0.6'
+  video_player: ^2.1.1
 
 dev_dependencies:
   flutter_test:

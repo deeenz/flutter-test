@@ -28,7 +28,7 @@ class _AllMoviesState extends State<AllMovies> {
           IconButton(
             icon: Icon(
               Icons.more_vert_outlined,
-              color: Colors.black,
+              color: Colors.white,
             ),
             onPressed: () {
               showMenu(
@@ -64,22 +64,30 @@ class _AllMoviesState extends State<AllMovies> {
         onTap: () {
           FocusScope.of(context).requestFocus(FocusNode());
         },
-        child: Consumer<MovieProvider>(
-          builder: (context, movie, child) => GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, crossAxisSpacing: 4.0, mainAxisSpacing: 4.0),
-            itemCount: movie.someMovies.length,
-            itemBuilder: (context, index) {
-              return movieItem(movie.someMovies[index]);
-            },
-          ),
+        child: StreamBuilder<List<Movie>>(
+          stream: Provider.of<MovieProvider>(context).fetchAllMovies(),
+          builder: (context, movie) => (movie.data == null)
+              ? Center(
+                  child: Text(
+                      "No movies added yet, Login as admin with email: admin@admin.com and password: password to add movies, thanks"),
+                )
+              : GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 4.0,
+                      mainAxisSpacing: 4.0),
+                  itemCount: movie.data.length,
+                  itemBuilder: (context, index) {
+                    return movieItem(movie.data[index]);
+                  },
+                ),
         ),
       ),
     );
   }
 
   Widget movieItem(Movie movie) {
-    Menu(
+    return Menu(
       menuBar: MenuBar(
           drawArrow: true,
           drawDivider: true,
@@ -105,7 +113,7 @@ class _AllMoviesState extends State<AllMovies> {
                 if (res == 'success') {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text("Movie Successfully Purchase"),
+                      content: Text("Movie Successfully Purchased"),
                     ),
                   );
                 }
@@ -114,8 +122,40 @@ class _AllMoviesState extends State<AllMovies> {
           ]),
       child: Card(
         elevation: 3,
-        child: Column(
-          children: [Text(movie.title)],
+        child: Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+                image: NetworkImage(movie.imageUri), fit: BoxFit.fill),
+          ),
+          width: MediaQuery.of(context).size.width * .45,
+          height: MediaQuery.of(context).size.width * .45,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  movie.title,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      backgroundColor: Colors.white,
+                      color: Theme.of(context).accentColor),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  movie.description,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -130,7 +170,13 @@ class _AllMoviesState extends State<AllMovies> {
         color: Theme.of(context).primaryColorLight,
       ),
       child: TextField(
-        onChanged: (value) {},
+        onChanged: (value) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Not Implemented"),
+            ),
+          );
+        },
         cursorColor: Color(0XF757575),
         decoration: InputDecoration(
           contentPadding: EdgeInsets.all(0),
